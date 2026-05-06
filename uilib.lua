@@ -81,7 +81,6 @@ function TheAbyss.new(title, subtitle)
     self.KeyFrame.ZIndex = 10
     Instance.new("UICorner", self.KeyFrame).CornerRadius = UDim.new(0, 12)
     
-    -- Key Frame Stroke
     local KeyStroke = Instance.new("UIStroke", self.KeyFrame)
     KeyStroke.Color = Color3.fromRGB(40, 35, 50)
     KeyStroke.Thickness = 1.5
@@ -203,7 +202,6 @@ end
 function TheAbyss:CreateUI()
     local isMobileDevice = isMobile()
     
-    -- Create Main UI Frame
     self.Main = Instance.new("Frame", self.Gui)
     self.Main.Size = isMobileDevice and UDim2.fromScale(0.95, 0.85) or UDim2.fromOffset(580, 480)
     self.Main.Position = UDim2.fromScale(0.5, 0.5)
@@ -218,7 +216,6 @@ function TheAbyss:CreateUI()
     MainStroke.Color = Color3.fromRGB(40, 35, 50)
     MainStroke.Thickness = 1.5
 
-    -- Top Bar for dragging
     local TopBar = Instance.new("Frame", self.Main)
     TopBar.Size = UDim2.new(1, 0, 0, 35)
     TopBar.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
@@ -237,7 +234,6 @@ function TheAbyss:CreateUI()
     TopTitle.TextXAlignment = Enum.TextXAlignment.Left
     TopTitle.ZIndex = 6
 
-    -- Sidebar
     self.Sidebar = Instance.new("Frame", self.Main)
     self.Sidebar.Size = UDim2.new(0, 160, 1, -35)
     self.Sidebar.Position = UDim2.new(0, 0, 0, 35)
@@ -270,7 +266,6 @@ function TheAbyss:CreateUI()
     BrandCredit.TextXAlignment = Enum.TextXAlignment.Left
     BrandCredit.ZIndex = 5
     
-    -- Separator line
     local Separator = Instance.new("Frame", self.Sidebar)
     Separator.Size = UDim2.new(1, -30, 0, 1)
     Separator.Position = UDim2.new(0, 15, 0, 70)
@@ -288,7 +283,6 @@ function TheAbyss:CreateUI()
     TabList.SortOrder = Enum.SortOrder.LayoutOrder
     TabList.Padding = UDim.new(0, 8)
 
-    -- Content Area
     self.Content = Instance.new("Frame", self.Main)
     self.Content.Size = UDim2.new(1, -170, 1, -45)
     self.Content.Position = UDim2.new(0, 160, 0, 35)
@@ -301,7 +295,6 @@ function TheAbyss:CreateUI()
     self.PageContainer.BackgroundTransparency = 1
     self.PageContainer.ZIndex = 5
 
-    -- Minimize Button
     local MinBtn = Instance.new("TextButton", TopBar)
     MinBtn.Size = UDim2.fromOffset(30, 30)
     MinBtn.Position = UDim2.new(1, -32, 0.5, -15)
@@ -312,7 +305,6 @@ function TheAbyss:CreateUI()
     MinBtn.TextSize = 18
     MinBtn.ZIndex = 7
 
-    -- Mini Widget
     self.MiniWidget = Instance.new("TextButton", self.Gui)
     self.MiniWidget.Name = "MiniWidget"
     self.MiniWidget.Size = UDim2.fromOffset(50, 50)
@@ -327,7 +319,6 @@ function TheAbyss:CreateUI()
     Instance.new("UICorner", self.MiniWidget).CornerRadius = UDim.new(0, 12)
     Instance.new("UIStroke", self.MiniWidget).Color = Theme.AccentEnd
 
-    -- Minimize/Maximize functionality
     MinBtn.MouseButton1Click:Connect(function()
         self.Main.Visible = false
         self.MiniWidget.Visible = true
@@ -338,7 +329,6 @@ function TheAbyss:CreateUI()
         self.Main.Visible = true
     end)
 
-    -- Setup dragging - Only from top bar
     local dragging = false
     local dragStart = nil
     local startPos = nil
@@ -369,7 +359,6 @@ function TheAbyss:CreateUI()
         end
     end)
 
-    -- Mini widget dragging
     local miniDragging = false
     local miniDragStart = nil
     local miniStartPos = nil
@@ -402,6 +391,7 @@ function TheAbyss:CreateUI()
 
     self.Pages = {}
     self.CurrentTab = nil
+    self.nextYPosition = {} -- Track next Y position for each card
 end
 
 function TheAbyss:CreateTab(name)
@@ -427,7 +417,6 @@ function TheAbyss:CreateTab(name)
     Pad.PaddingLeft = UDim.new(0, 2)
     Pad.PaddingRight = UDim.new(0, 5)
     
-    -- Auto-update canvas size
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         Page.CanvasSize = UDim2.fromOffset(0, Layout.AbsoluteContentSize.Y + 10)
     end)
@@ -485,8 +474,11 @@ end
 function TheAbyss:CreateCard(page, titleText, descText)
     if not page then return nil end
     
+    local cardHeight = 55 -- Base height for title
+    if descText then cardHeight = cardHeight + 18 end -- Add room for description
+    
     local Card = Instance.new("Frame", page)
-    Card.Size = UDim2.new(1, 0, 0, 95)
+    Card.Size = UDim2.new(1, 0, 0, cardHeight)
     Card.BackgroundColor3 = Theme.Card
     Card.ZIndex = 5
     Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10)
@@ -517,15 +509,24 @@ function TheAbyss:CreateCard(page, titleText, descText)
         Desc.ZIndex = 5
     end
     
+    -- Store card for tracking elements
+    Card.ElementCount = 0
+    
     return Card
 end
 
 function TheAbyss:CreateButton(card, buttonText, callback)
     if not card then return nil end
     
+    card.ElementCount = (card.ElementCount or 0) + 1
+    local yOffset = 52 + ((card.ElementCount - 1) * 40)
+    
+    -- Expand card to fit
+    card.Size = UDim2.new(1, 0, 0, yOffset + 40)
+    
     local Button = Instance.new("TextButton", card)
     Button.Size = UDim2.new(1, -30, 0, 34)
-    Button.Position = UDim2.new(0, 15, 0, 52)
+    Button.Position = UDim2.new(0, 15, 0, yOffset)
     Button.BackgroundColor3 = Theme.AccentEnd
     Button.Text = buttonText
     Button.Font = Enum.Font.GothamBold
@@ -534,7 +535,6 @@ function TheAbyss:CreateButton(card, buttonText, callback)
     Button.ZIndex = 6
     Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
     
-    -- Hover Effects
     Button.MouseEnter:Connect(function()
         Tween(Button, {BackgroundColor3 = Theme.BrightPurple})
     end)
@@ -557,9 +557,15 @@ end
 function TheAbyss:CreateToggle(card, toggleText, callback)
     if not card then return nil end
     
+    card.ElementCount = (card.ElementCount or 0) + 1
+    local yOffset = 52 + ((card.ElementCount - 1) * 40)
+    
+    -- Expand card to fit
+    card.Size = UDim2.new(1, 0, 0, yOffset + 40)
+    
     local ToggleFrame = Instance.new("Frame", card)
     ToggleFrame.Size = UDim2.new(1, -30, 0, 34)
-    ToggleFrame.Position = UDim2.new(0, 15, 0, 52)
+    ToggleFrame.Position = UDim2.new(0, 15, 0, yOffset)
     ToggleFrame.BackgroundTransparency = 1
     ToggleFrame.ZIndex = 6
     
@@ -614,9 +620,15 @@ end
 function TheAbyss:CreateSlider(card, sliderText, min, max, default, callback)
     if not card then return nil end
     
+    card.ElementCount = (card.ElementCount or 0) + 1
+    local yOffset = 52 + ((card.ElementCount - 1) * 40)
+    
+    -- Expand card to fit
+    card.Size = UDim2.new(1, 0, 0, yOffset + 40)
+    
     local SliderFrame = Instance.new("Frame", card)
     SliderFrame.Size = UDim2.new(1, -30, 0, 34)
-    SliderFrame.Position = UDim2.new(0, 15, 0, 52)
+    SliderFrame.Position = UDim2.new(0, 15, 0, yOffset)
     SliderFrame.BackgroundTransparency = 1
     SliderFrame.ZIndex = 6
     
@@ -714,9 +726,15 @@ end
 function TheAbyss:CreateDropdown(card, dropdownText, options, callback)
     if not card then return nil end
     
+    card.ElementCount = (card.ElementCount or 0) + 1
+    local yOffset = 52 + ((card.ElementCount - 1) * 40)
+    
+    -- Expand card to fit
+    card.Size = UDim2.new(1, 0, 0, yOffset + 40)
+    
     local DropdownFrame = Instance.new("Frame", card)
     DropdownFrame.Size = UDim2.new(1, -30, 0, 34)
-    DropdownFrame.Position = UDim2.new(0, 15, 0, 52)
+    DropdownFrame.Position = UDim2.new(0, 15, 0, yOffset)
     DropdownFrame.BackgroundColor3 = Theme.Card
     DropdownFrame.ClipsDescendants = true
     DropdownFrame.ZIndex = 10
@@ -816,9 +834,15 @@ end
 function TheAbyss:CreateInputBox(card, placeholderText, callback)
     if not card then return nil end
     
+    card.ElementCount = (card.ElementCount or 0) + 1
+    local yOffset = 52 + ((card.ElementCount - 1) * 40)
+    
+    -- Expand card to fit
+    card.Size = UDim2.new(1, 0, 0, yOffset + 40)
+    
     local InputFrame = Instance.new("Frame", card)
     InputFrame.Size = UDim2.new(1, -30, 0, 34)
-    InputFrame.Position = UDim2.new(0, 15, 0, 52)
+    InputFrame.Position = UDim2.new(0, 15, 0, yOffset)
     InputFrame.BackgroundColor3 = Theme.Card
     InputFrame.ZIndex = 6
     Instance.new("UICorner", InputFrame).CornerRadius = UDim.new(0, 6)
